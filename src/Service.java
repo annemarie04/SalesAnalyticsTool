@@ -193,8 +193,8 @@ public class Service {
             while(myReader.hasNextLine()) {
                 String name = myReader.nextLine();
                 int idT1 = Integer.parseInt(myReader.nextLine());
-                int idT2 = Integer.parseInt(myReader.nextLine());;
-                int idT3 = Integer.parseInt(myReader.nextLine());;
+                int idT2 = Integer.parseInt(myReader.nextLine());
+                int idT3 = Integer.parseInt(myReader.nextLine());
 
                 SalesTransaction transaction1 = getTransactionById(idT1);
                 SalesTransaction transaction2 = getTransactionById(idT2);
@@ -393,11 +393,3 @@ public class Service {
         }
     }
 }
-
-
-// analytics
-// -> multiple products reports: most generated income, most units sold
-// -> multiple regions: best income generating region, region with most products sold
-// -> per customer: prefered product; moste expensive product bought; most produdct bought
-
-// promotion: reducere cu p% a unui produs
