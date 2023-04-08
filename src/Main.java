@@ -146,28 +146,5 @@ public class Main {
                 System.out.println("Wrong number introduced!");
             }
         }
-//
-
-//
-
-
-//
-
-
-//
-
-
-//
-
-
-//
-
-//
-
-//        // colectii
-//        // meniu interactiv
-//        // nr de functii
-//        //
-
     }
 }
