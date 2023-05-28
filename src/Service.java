@@ -1,23 +1,26 @@
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collections;
-import java.util.Comparator;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 public class Service {
-    ArrayList<Product> Products = new ArrayList<>();
-    ArrayList<Customer> Customers = new ArrayList<>();
-    ArrayList<SalesTransaction> Transactions = new ArrayList<>();
-    ArrayList<Region> Regions = new ArrayList<>();
-    ArrayList<SalesReport> Reports = new ArrayList<>();
+    List<Product> products = new ArrayList<>();
+    List<Customer> customers = new ArrayList<>();
+    List<SalesTransaction> transactions = new ArrayList<>();
+    List<Region> regions = new ArrayList<>();
+    List<SalesReport> reports = new ArrayList<>();
 
-    ArrayList<ProductReport> ProductReports = new ArrayList<>();
-    ArrayList<RegionReport> RegionReports = new ArrayList<>();
-    ArrayList<CustomerReport> CustomerReports = new ArrayList<>();
-    Analytics analytics = new Analytics(ProductReports, RegionReports, CustomerReports);
+    List<ProductReport> productReports = new ArrayList<>();
+    List<RegionReport> regionReports = new ArrayList<>();
+    List<CustomerReport> customerReports = new ArrayList<>();
+    Analytics analytics = new Analytics(productReports, regionReports, customerReports);
+    MySQLAccess sql = new MySQLAccess();
+
+    public Service(MySQLAccess sql) throws SQLException, ClassNotFoundException {
+        this.sql = sql;
+    }
 
     public void addAll() {
         addProducts();
@@ -31,7 +34,25 @@ public class Service {
         displayTransactions();
         displayRegions();
     }
+    public void deleteAll() throws Exception {
+        String queryProducts = "delete from Products";
+        sql.queryDataBase(queryProducts);
 
+        String queryCustomers = "delete from Customers";
+        sql.queryDataBase(queryCustomers);
+
+        String queryTransactions = "delete from SalesTransactions";
+        sql.queryDataBase(queryTransactions);
+
+        String queryAlterProducts = "ALTER TABLE Products AUTO_INCREMENT = 1;";
+        sql.queryDataBase(queryAlterProducts);
+
+        String queryAlterCustomers = "ALTER TABLE Customers AUTO_INCREMENT = 1;";
+        sql.queryDataBase(queryAlterCustomers);
+
+        String queryAlterTransactions = "ALTER TABLE SalesTransactions AUTO_INCREMENT = 1;";
+        sql.queryDataBase(queryAlterTransactions);
+    }
     // ------------------------------------------- PRODUCTS ----------------------------------------------------
     public void addProducts() {
         try {
@@ -45,7 +66,9 @@ public class Service {
                 String description = myReader.nextLine();
 
                 Product p = new Product (id, name, category, price, description);
-                Products.add(p);
+                products.add(p);
+                String queryString = String.format("insert into Products values (default, '%s', '%s', %.2f, '%s' )", name, category, price, description);
+                sql.queryDataBase(queryString);
                 id ++;
             }
             System.out.println("Products added successfully!");
@@ -55,15 +78,17 @@ public class Service {
         } catch (FileNotFoundException e) {
             System.out.println("Products: An error occurred.");
             e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
     public void displayProducts() {
-        for(int i = 0 ; i < Products.size(); i ++) {
-            System.out.println("ID: " + Products.get(i).getProductID());
-            System.out.println("Name: " + Products.get(i).getProductName());
-            System.out.println("Category: " + Products.get(i).getCategory());
-            System.out.println("Price: " + Products.get(i).getPrice());
-            System.out.println("Description: " + Products.get(i).getDescription());
+        for(int i = 0 ; i < products.size(); i ++) {
+            System.out.println("ID: " + products.get(i).getProductID());
+            System.out.println("Name: " + products.get(i).getProductName());
+            System.out.println("Category: " + products.get(i).getCategory());
+            System.out.println("Price: " + products.get(i).getPrice());
+            System.out.println("Description: " + products.get(i).getDescription());
             System.out.println();
         }
     }
@@ -75,22 +100,44 @@ public class Service {
         System.out.println("Description: " + product.getDescription());
     }
     public Product getProductById(int id) {
-        for(int i = 0; i < Products.size(); i ++) {
-            if(Products.get(i).getProductID() == id)
-                return Products.get(i);
+        for(int i = 0; i < products.size(); i ++) {
+            if(products.get(i).getProductID() == id)
+                return products.get(i);
         }
         return null;
     }
-    public void applyPromotion(int productID, int percentage) {
-        for(Product product: Products) {
+    public void applyPromotion(int productID, int percentage) throws Exception {
+        for(Product product: products) {
             if(product.getProductID() == productID) {
                 Double newPrice = product.getPrice() - product.getPrice() * percentage / 100;
                 product.setPrice(newPrice);
                 System.out.println("Promotion applied successfully!");
+                 String queryString = String.format("update products set price = %.2f where id_product = %d", newPrice, productID);
+                sql.queryDataBase(queryString);
                 return;
             }
         }
         System.out.println("Applying the promotion failed.");
+    }
+    public void deleteProduct(int productID) throws Exception {
+        String queryString = String.format("delete from Products where id_product = %d", productID);
+        System.out.println(queryString);
+        sql.queryDataBase(queryString);
+    }
+    public void selectProducts() throws SQLException {
+        ResultSet resultSet = sql.readFromDB("select * from Products");
+
+        // ResultSet is initially before the first data set
+        while (resultSet.next()) {
+
+            int product_id = resultSet.getInt("id_product");
+            String productName = resultSet.getString("product_name");
+            String category = resultSet.getString("category");
+            Double price = resultSet.getDouble("price");
+            String description = resultSet.getString("description");
+            Product p = new Product(product_id, productName, category, price, description);
+            products.add(p);
+        }
     }
     // ------------------------------------------- CUSTOMERS ----------------------------------------------------
     public void addCustomers() {
@@ -103,7 +150,10 @@ public class Service {
                 String lastName = myReader.nextLine();
 
                 Customer c = new Customer (id, firstName, lastName);
-                Customers.add(c);
+                customers.add(c);
+                String queryString = String.format("insert into  Customers values (default, '%s', '%s')", firstName, lastName);
+                sql.queryDataBase(queryString);
+
                 id ++;
             }
             System.out.println("Customers added successfully!");
@@ -112,13 +162,15 @@ public class Service {
         } catch (FileNotFoundException e) {
             System.out.println("Customers: An error occurred.");
             e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
     public void displayCustomers() {
-        for(int i = 0 ; i < Customers.size(); i ++) {
-            System.out.println("ID: " + Customers.get(i).getCustomerID());
-            System.out.println("First Name: " + Customers.get(i).getFirstName());
-            System.out.println("Last Name: " + Customers.get(i).getLastName());
+        for(int i = 0 ; i < customers.size(); i ++) {
+            System.out.println("ID: " + customers.get(i).getCustomerID());
+            System.out.println("First Name: " + customers.get(i).getFirstName());
+            System.out.println("Last Name: " + customers.get(i).getLastName());
 
             System.out.println();
         }
@@ -129,11 +181,33 @@ public class Service {
         System.out.println("Last Name: " + customer.getLastName());
     }
     public Customer getCustomerById(int id) {
-        for (int i = 0; i < Customers.size(); i++) {
-            if (Customers.get(i).getCustomerID() == id)
-                return Customers.get(i);
+        for (int i = 0; i < customers.size(); i++) {
+            if (customers.get(i).getCustomerID() == id)
+                return customers.get(i);
         }
         return null;
+    }
+    public void deleteCustomer(int customerID) throws Exception {
+        String queryString = String.format("delete from Customers where id_customer = %d", customerID);
+        System.out.println(queryString);
+        sql.queryDataBase(queryString);
+    }
+    public void selectCustomers() throws SQLException {
+        ResultSet resultSet = sql.readFromDB("select * from Customers");
+
+        // ResultSet is initially before the first data set
+        while (resultSet.next()) {
+
+            int customer_id = resultSet.getInt("id_customer");
+            String firstName = resultSet.getString("first_name");
+            String lastName = resultSet.getString("last_name");
+            Customer c = new Customer(customer_id, firstName, lastName);
+            customers.add(c);
+        }
+    }
+    public void updateCustomerInfo(int customerID, String firstName, String lastName) throws Exception {
+        String queryString = String.format("update Customers set first_name = '%s', last_name = '%s' where id_customer = %d", firstName, lastName, customerID);
+        sql.queryDataBase(queryString);
     }
     // ------------------------------------------- TRANSACTIONS ----------------------------------------------------
     public void addTransactions() {
@@ -153,7 +227,10 @@ public class Service {
                     System.out.println("Product not found.");
                 } else {
                     SalesTransaction st = new SalesTransaction(id, p, c, quantity);
-                    Transactions.add(st);
+                    transactions.add(st);
+                    String queryString = String.format("insert into SalesTransactions values (default, %d, %d, %d, %.2f)", idCustomer, idProduct, quantity, st.getTotalPrice());
+                    System.out.println(queryString);
+                    sql.queryDataBase(queryString);
                     id ++;
                 }
             }
@@ -164,25 +241,62 @@ public class Service {
         } catch (FileNotFoundException e) {
             System.out.println("Transactions: An error occured.");
             e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
     public void displayTransactions() {
-        for(int i = 0; i < Transactions.size(); i ++) {
-            System.out.println("ID: " + Transactions.get(i).getTransactionID());
-            System.out.println("Product: " + Transactions.get(i).getProduct().getProductName());
-            System.out.println("Customer: " + Transactions.get(i).getCustomer().getFirstName() + " " + Transactions.get(i).getCustomer().getLastName());
-            System.out.println("Quantity: " + Transactions.get(i).getQuantity());
-            System.out.println("Total Price: " + Transactions.get(i).getTotalPrice());
+        for(int i = 0; i < transactions.size(); i ++) {
+            System.out.println("ID: " + transactions.get(i).getTransactionID());
+            System.out.println("Product: " + transactions.get(i).getProduct().getProductName());
+            System.out.println("Customer: " + transactions.get(i).getCustomer().getFirstName() + " " + transactions.get(i).getCustomer().getLastName());
+            System.out.println("Quantity: " + transactions.get(i).getQuantity());
+            System.out.println("Total Price: " + transactions.get(i).getTotalPrice());
 
             System.out.println();
         }
     }
     public SalesTransaction getTransactionById(int id) {
-        for(int i = 0; i < Transactions.size(); i ++) {
-            if(Transactions.get(i).getTransactionID() == id)
-                return Transactions.get(i);
+        for(int i = 0; i < transactions.size(); i ++) {
+            if(transactions.get(i).getTransactionID() == id)
+                return transactions.get(i);
         }
         return null;
+    }
+    public void deleteTransaction(int transactionID) throws Exception {
+        String queryString = String.format("delete from SalesTransactions where id_transaction = %d", transactionID);
+        System.out.println(queryString);
+        sql.queryDataBase(queryString);
+    }
+    public void selectTransactions() throws SQLException {
+        ResultSet resultSet = sql.readFromDB("select * from SalesTransactions");
+
+        // ResultSet is initially before the first data set
+        while (resultSet.next()) {
+            // It is possible to get the columns via name
+            // also possible to get the columns via the column number
+            // which starts at 1
+            // e.g. resultSet.getSTring(2);
+            int transaction_id = resultSet.getInt("id_transaction");
+            int product_id = resultSet.getInt("id_product");
+            int customer_id = resultSet.getInt("id_customer");
+            int quantity = resultSet.getInt("quantity");
+            Double totalPrice = resultSet.getDouble("total_price");
+            SalesTransaction t = new SalesTransaction(transaction_id, getProductById(product_id), getCustomerById(customer_id), quantity);
+            transactions.add(t);
+        }
+    }
+    public void updateTransactionInfo(int transactionID, int productID, int customerID, int quantity) throws Exception {
+        String queryPrice = String.format("select price from Products where id_product = %d", productID);
+        ResultSet resultSet = sql.readFromDB(queryPrice);
+        Double price = 0.0;
+        while(resultSet.next()){
+            price = resultSet.getDouble("price");
+        }
+
+        Double totalPrice = price * quantity;
+        String queryString = String.format("update SalesTransactions set id_product = %d, id_customer = %d, quantity = %d, total_price = %.2f where id_transaction = %d", productID, customerID, quantity, totalPrice, transactionID );
+        sql.queryDataBase(queryString);
     }
     // ------------------------------------------- REGIONS ----------------------------------------------------
     public void addRegions() {
@@ -205,7 +319,7 @@ public class Service {
                     transactions.add(transaction2);
                     transactions.add(transaction3);
                     Region r = new Region(id, name, transactions);
-                    Regions.add(r);
+                    regions.add(r);
                     id ++;
                 }
                 else {
@@ -219,20 +333,19 @@ public class Service {
         }
     }
     public void displayRegions() {
-        for(int i = 0; i < Regions.size(); i ++) {
-            System.out.println("ID: " + Regions.get(i).getRegionID());
-            System.out.println("Name: " + Regions.get(i).getName());
-            System.out.println("Transactions: " + Regions.get(i).getTransactions());
+        for(int i = 0; i < regions.size(); i ++) {
+            System.out.println("ID: " + regions.get(i).getRegionID());
+            System.out.println("Name: " + regions.get(i).getName());
+            System.out.println("Transactions: " + regions.get(i).getTransactions());
             System.out.println();
         }
     }
-
     // ------------------------------------------- REPORTS ----------------------------------------------------
     public void generateReport_byProduct(String productName) {
-        int id = Reports.size() + 1;
+        int id = reports.size() + 1;
         int productID = -1;
         ArrayList<SalesTransaction> transList = new ArrayList<>();
-        for(Product product: Products) {
+        for(Product product: products) {
             if(product.getProductName().toLowerCase().equals(productName.toLowerCase())) {
                 productID = product.getProductID();
             }
@@ -241,7 +354,7 @@ public class Service {
             double sumSales = 0;
             int unitsSold = 0;
             Product p = null;
-            for(SalesTransaction trans: Transactions) {
+            for(SalesTransaction trans: transactions) {
                 if(trans.getProduct().getProductID() == productID) {
                     transList.add(trans);
                     unitsSold += trans.getQuantity();
@@ -251,9 +364,9 @@ public class Service {
             }
             if(p != null) {
                 ProductReport report = new ProductReport(id, "byProduct", transList, p, sumSales, unitsSold);
-                ProductReports.add(report);
-                analytics.setProductReports(ProductReports);
-                Reports.add(report);
+                productReports.add(report);
+                analytics.setProductReports(productReports);
+                reports.add(report);
                 System.out.println("Product report generated successfully!");
             }
         } else {
@@ -261,11 +374,11 @@ public class Service {
         }
     }
     public void generateReport_byRegion(String regionName) {
-        int id = Reports.size() + 1;
+        int id = reports.size() + 1;
         int regionID = -1;
         Region r = null;
         ArrayList<SalesTransaction> transactions = new ArrayList<>();
-        for(Region region: Regions) {
+        for(Region region: regions) {
             if(region.getName().toLowerCase().equals(regionName.toLowerCase())) {
                 regionID = region.getRegionID();
                 transactions = region.getTransactions();
@@ -295,22 +408,22 @@ public class Service {
                 }
             }
             RegionReport report = new RegionReport(id, "byRegion",transactions, r, maxRevenueEntry.getKey(), sumSales);
-            RegionReports.add(report);
-            analytics.setRegionReports(RegionReports);
-            Reports.add(report);
+            regionReports.add(report);
+            analytics.setRegionReports(regionReports);
+            reports.add(report);
             System.out.println("Region report generated successfully!");
         } else {
             System.out.println("Region not found.");
         }
     }
     public void generateReport_byCustomer(int customerID) {
-        int id = Reports.size() + 1;
+        int id = reports.size() + 1;
         ArrayList<SalesTransaction> transList = new ArrayList<>();
         Customer customer = getCustomerById(customerID);
         HashMap<Product, Integer> customerProductMap = new HashMap<Product, Integer>();
 
         double totalSpent = 0;
-        for (SalesTransaction trans : Transactions) {
+        for (SalesTransaction trans : transactions) {
             if (trans.getCustomer().getCustomerID() == customerID) {
                 transList.add(trans);
                 totalSpent += trans.getTotalPrice();
@@ -333,32 +446,72 @@ public class Service {
         }
         Product favProduct = maxQuantity.getKey();
         CustomerReport report = new CustomerReport(id, "byCustomer", transList, customer, favProduct, totalSpent);
-        CustomerReports.add(report);
-        analytics.setCustomerReports(CustomerReports);
-        Reports.add(report);
+        customerReports.add(report);
+        analytics.setCustomerReports(customerReports);
+        reports.add(report);
         System.out.println("Customer report generated successfully!");
     }
     public void displayReports() {
-        for(int i = 0; i < Reports.size(); i ++){
-            System.out.println("Report #" + Reports.get(i).getReportID() + " " + Reports.get(i).getReportType());
-            System.out.println("Transactions: " + Reports.get(i).getData().size());
-            if(Reports.get(i) instanceof ProductReport) {
-                ProductReport report = (ProductReport) Reports.get(i);
+        for(int i = 0; i < reports.size(); i ++){
+            System.out.println("Report #" + reports.get(i).getReportID() + " " + reports.get(i).getReportType());
+            System.out.println("Transactions: " + reports.get(i).getData().size());
+            if(reports.get(i) instanceof ProductReport) {
+                ProductReport report = (ProductReport) reports.get(i);
                 report.DisplayReport();
-            } else if (Reports.get(i) instanceof RegionReport) {
-                RegionReport report = (RegionReport) Reports.get(i);
+            } else if (reports.get(i) instanceof RegionReport) {
+                RegionReport report = (RegionReport) reports.get(i);
                 report.DisplayReport();
-            } else if (Reports.get(i) instanceof CustomerReport) {
-                CustomerReport report = (CustomerReport) Reports.get(i);
+            } else if (reports.get(i) instanceof CustomerReport) {
+                CustomerReport report = (CustomerReport) reports.get(i);
                 report.DisplayReport();
             }
         }
     }
+    public void addReportsToDB() throws Exception {
+        for(int i = 0; i < reports.size(); i ++){
+            int reportID = reports.get(i).getReportID();
+            String reportType = reports.get(i).getReportType();
+            int numTransactions = reports.get(i).getData().size();
+            String reportContent = String.format("Transactions: %d\n", numTransactions);
+            if(reports.get(i) instanceof ProductReport) {
+                ProductReport report = (ProductReport) reports.get(i);
+                reportContent += report.generateReportContent();
+            } else if (reports.get(i) instanceof RegionReport) {
+                RegionReport report = (RegionReport) reports.get(i);
+                reportContent += report.generateReportContent();
+            } else if (reports.get(i) instanceof CustomerReport) {
+                CustomerReport report = (CustomerReport) reports.get(i);
+                reportContent += report.generateReportContent();
+            }
+            String queryString = String.format("insert into SalesReports value (default, '%s', '%s')", reportType, reportContent);
+            sql.queryDataBase(queryString);
+        }
+    }
+    public void selectReportsFromDB() throws SQLException {
+        String queryString = "select * from SalesReports";
+        ResultSet resultSet = sql.readFromDB(queryString);
 
+        while(resultSet.next()) {
+            int reportID = resultSet.getInt("id_report");
+            String reportType = resultSet.getString("type");
+            String reportContent = resultSet.getString("content");
+
+            System.out.println("Report #" + Integer.toString(reportID) + " " + reportType);
+            System.out.println(reportContent + '\n');
+        }
+    }
+    public void deleteReportById(int reportID) throws Exception {
+        String queryString = String.format("delete from SalesReports where id_report = %d", reportID);
+        sql.queryDataBase(queryString);
+    }
+    public void updateReportById(int reportID, String content) throws Exception {
+        String queryString = String.format("update SalesReports set content = '%s' where id_report = %d", content, reportID);
+        sql.queryDataBase(queryString);
+    }
     // ------------------------------------------- ANALYTICS ----------------------------------------------------
     public void ProductAnalytics() {
         // Generate Reports for all Products
-        for(Product p : Products) {
+        for(Product p : products) {
             generateReport_byProduct(p.getProductName());
         }
         // Generate Analytics for ProductReports
@@ -370,7 +523,7 @@ public class Service {
     }
     public void CustomerAnalytics() {
         // Generate Reports for all Customers
-        for(Customer c : Customers) {
+        for(Customer c : customers) {
             generateReport_byCustomer(c.getCustomerID());
         }
         // Generate Analytics for CustomerReports
@@ -382,7 +535,7 @@ public class Service {
     }
     public void RegionAnalytics() {
         // Generate Reports for all Customers
-        for(Region r : Regions) {
+        for(Region r : regions) {
             generateReport_byRegion(r.getName());
         }
         // Generate Analytics for CustomerReports

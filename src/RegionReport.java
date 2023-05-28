@@ -43,4 +43,12 @@ public class RegionReport extends SalesReport{
         System.out.println("Total Revenue: " + Revenue);
         System.out.println();
     }
+
+    public String generateReportContent() {
+        String regionName = Region.getName();
+        String bestProduct = BestProduct.getProductName();
+        Double totalRevenue = Revenue;
+        String reportContent = String.format("Region: %s\nBest Product: %s\nTotal Revenue: %.2f\n", regionName, bestProduct, totalRevenue);
+        return reportContent;
+    }
 }

@@ -1,35 +1,36 @@
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
-public class Analytics {
-    private ArrayList<ProductReport> ProductReports;
-    private ArrayList<RegionReport> RegionReports;
-    private ArrayList<CustomerReport>  CustomerReports;
 
-    public Analytics(ArrayList<ProductReport> productReports, ArrayList<RegionReport> regionReports, ArrayList<CustomerReport> customerReports) {
+public class Analytics {
+    private List<ProductReport> ProductReports;
+    private List<RegionReport> RegionReports;
+    private List<CustomerReport>  CustomerReports;
+
+    public Analytics(List<ProductReport> productReports, List<RegionReport> regionReports, List<CustomerReport> customerReports) {
     }
 
-    public ArrayList<ProductReport> getProductReports() {
+    public List<ProductReport> getProductReports() {
         return ProductReports;
     }
 
-    public void setProductReports(ArrayList<ProductReport> productReports) {
+    public void setProductReports(List<ProductReport> productReports) {
         ProductReports = productReports;
     }
 
-    public ArrayList<RegionReport> getRegionReports() {
+    public List<RegionReport> getRegionReports() {
         return RegionReports;
     }
 
-    public void setRegionReports(ArrayList<RegionReport> regionReports) {
+    public void setRegionReports(List<RegionReport> regionReports) {
         RegionReports = regionReports;
     }
 
-    public ArrayList<CustomerReport> getCustomerReports() {
+    public List<CustomerReport> getCustomerReports() {
         return CustomerReports;
     }
 
-    public void setCustomerReports(ArrayList<CustomerReport> customerReports) {
+    public void setCustomerReports(List<CustomerReport> customerReports) {
         CustomerReports = customerReports;
     }
 

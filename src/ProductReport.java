@@ -42,4 +42,12 @@ public class ProductReport extends SalesReport{
         System.out.println("Units Sold: " + UnitsSold);
         System.out.println();
     }
+
+    public String generateReportContent() {
+        String productName = Product.getProductName();
+        Double revenueGenerated = RevenueGenerated;
+        int unitsSold = UnitsSold;
+        String reportContent = String.format("Product: %s\nRevenue Generated: %.2f\nUnits Sold: %d\n", productName, revenueGenerated, unitsSold);
+        return reportContent;
+    }
 }

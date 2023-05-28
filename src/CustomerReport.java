@@ -42,4 +42,12 @@ public class CustomerReport extends SalesReport{
         System.out.println("Amount Spent: " + AmountSpent);
         System.out.println();
     }
+
+    public String generateReportContent() {
+        String customerName  = Customer.getFirstName() + " " + Customer.getLastName();
+        String favProduct = FavProduct.getProductName();
+        Double amountSpent = AmountSpent;
+        String reportContent = String.format("Customer: %s\nFavourite Product: %s\nAmount Spent: %.2f\n", customerName, favProduct, amountSpent);
+        return reportContent;
+    }
 }
